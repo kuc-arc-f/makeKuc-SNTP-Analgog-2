@@ -91,7 +91,7 @@ void display_OLED(String sTime , String sTemp){
   display.println( sTime );
   display.println(sBuff);
   display.display();
-  delay(500);  
+  delay(100);  
   display.clearDisplay();
 }
 //
