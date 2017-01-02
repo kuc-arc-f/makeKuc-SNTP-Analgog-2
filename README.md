@@ -1,4 +1,6 @@
-﻿# makeKuc-SNTP-Analgog-2 (BETA Version)
+﻿# makeKuc-SNTP-Analgog-2 (BETA)
+
+ Version: 0.91
 
  Author  : Kouji Nakashima / kuc-arc-f.com
 
