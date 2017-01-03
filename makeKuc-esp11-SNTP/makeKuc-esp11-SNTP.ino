@@ -1,6 +1,7 @@
 /*
  SoftwareSerial send, esp8266
- + SNTP Udp Client, 
+ + SNTP Udp Client,
+ ver: 0.9.2 
  timezone= JST
  thanks :Arduino Time library
  http://playground.arduino.cc/code/time
@@ -26,6 +27,10 @@ byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing pack
 uint32_t mTimerNTP=0;
 uint32_t mTimerTmp=0;
 uint32_t mTimerHTTP=0;
+int mSTAT=0;
+int mSTAT_Send =101;
+int mSTAT_Recv=102;
+uint32_t mReceive_Start=0;
 //Struct
 struct stParam{
  String dat1;
@@ -106,6 +111,7 @@ void setup() {
   Serial.println("WiFi connected");
   //NTP
   udp.begin(localPort);
+  mSTAT= mSTAT_Send;
   Serial.println("#End-Setup");
 }
 //
@@ -154,7 +160,6 @@ void proc_http(String sTemp ){
         Serial.println("connection failed");
         return;
       }
-      //String url = "/update?key="+ mAPI_KEY + "&field1="+ sTemp +"&field2=" + sHum;        
       String url = "/update?key="+ mAPI_KEY + "&field1="+ sTemp ;        
       client.print(String("GET ") + url + " HTTP/1.1\r\n" +
         "Host: " + host + "\r\n" + 
@@ -163,7 +168,7 @@ void proc_http(String sTemp ){
       int iSt=0;
       while(client.available()){
           String line = client.readStringUntil('\r');
-Serial.print(line);
+// Serial.print(line);
       }    
 }
 String mBuff="";
@@ -183,11 +188,16 @@ void proc_UART(){
             proc_http(mParam.dat1   ) ;
           }
 Serial.print("d1=");
-Serial.println( mParam.dat1 );            
+Serial.println( mParam.dat1 );
+          mSTAT= mSTAT_Send;           
 //Serial.print("mBuff=");
 //Serial.println( mBuff );            
         }
         mBuff="";
+    }else{
+      if(mReceive_Start > millis()+ 10000 ){
+        mSTAT = mSTAT_Send;
+      }
     }
   }//end_while
 }
@@ -203,12 +213,17 @@ void loop() {
 Serial.println("#Call-getNtpTime");
 Serial.println( String(year())+"-"+ String(month())+"-"+ String(day( ))+" "+String(hour())+":"+String(minute())+":"+String(second())  );       
   }
-  if (millis() > mTimerTmp) {
-     mTimerTmp = millis()+ 1000;
-     time_display();
+  if(mSTAT==mSTAT_Send ){
+      if (millis() > mTimerTmp) {
+         mTimerTmp = millis()+ 1000;
+         time_display();
+         mSTAT = mSTAT_Recv;
+         mReceive_Start= millis();
+      }   
   }
-  proc_UART();
-//  delay(1000);  
+  else {
+      proc_UART();
+  }
   
 }
 

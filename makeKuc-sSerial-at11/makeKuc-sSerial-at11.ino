@@ -1,6 +1,6 @@
-
 /* SoftwareSerial +OLED + Analog Sensor(LM60BIZ )
  , NTP receive sample. (Atmega328P )
+  BETA ver: 0.9.2
 */
 
 #include <SoftwareSerial.h>
@@ -13,6 +13,7 @@
 SoftwareSerial mySerial(5, 6); /* RX:D5, TX:D6 */
 const int mVoutPin = 0;
 uint32_t mTimerTmp;
+uint32_t mReceive_Start=0; 
 int mTemp=0;
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -84,7 +85,8 @@ int getTempNum(){
 //
 // void display_OLED(String sTime ){
 void display_OLED(String sTime , String sTemp){
-  String sBuff ="Temp:"+ sTemp+ "C";
+  //String sBuff ="Temp:"+ sTemp+ "C";
+  String sBuff ="T: "+ sTemp+ "C";
   display.setTextSize(2);
   display.setCursor(0,0);
   display.setTextColor(WHITE);
@@ -107,31 +109,39 @@ boolean Is_validHead(String sHd){
 String mBuff="";
 //
 void loop() {
+    if (millis() > mTimerTmp) {
+       mTimerTmp = millis()+ 5000;
+       mTemp= getTempNum();
+//Serial.print("cD1=");
+//Serial.println(cD1  );       
+    }
+    // UART
     while( mySerial.available() ){
       char c= mySerial.read();
       mBuff.concat(c );
+//Serial.println( "mBuff="+ mBuff );
       if(  mBuff.length() >= 10 ){
         String sHead= mBuff.substring(0,2);
         boolean bChkHd= Is_validHead( sHead );
         if(bChkHd== true){
 //Serial.println( "Hd="+ sHead );
-//Serial.println( "mBuff="+ mBuff );
+Serial.println( "mBuff.2="+ mBuff );
           String sTmp= mBuff.substring(2,10);
           display_OLED(sTmp ,String(mTemp));
+          //send
+          int iD1=int(mTemp );
+          char cD1[10+1];
+          sprintf(cD1 , "d1%08d", iD1);       
+          mySerial.print( cD1 );
+          mReceive_Start=millis();                   
         }        
         mBuff="";
+      }else{
+          if(mReceive_Start > millis()+ 10000 ){
+            mBuff="";
+          }
       }
     } //end_while
-    if (millis() > mTimerTmp) {
-       mTimerTmp = millis()+ 5000;
-       mTemp= getTempNum();
-       int iD1=int(mTemp );
-       char cD1[10+1];
-     sprintf(cD1 , "d1%08d", iD1);       
-     mySerial.print( cD1 );
-//Serial.print("cD1=");
-//Serial.println(cD1  );       
-    }
 
 }
 
